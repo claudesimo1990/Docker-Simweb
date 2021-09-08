@@ -1,0 +1,75 @@
+version: '3.7'
+services:
+  redis:
+    build:
+      context: .
+      dockerfile: redis/Dockerfile
+    container_name: claude_simweb_redis
+    networks:
+      - proxy
+
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+      args:
+        crt: ./certs/localhost.crt
+        key: ./certs/localhost.key
+        fastcgi: ./nginx/config/fastcgi.conf
+        default_conf: ./nginx/config/default.conf
+        nginx_conf: ./nginx/config/nginx_prod.conf
+    volumes:
+      - /var/www/web/simweb:/var/www/html
+      - /var/www/web/simweb/data:/var/www/data
+      - /var/www/web/simweb/logs/nginx:/var/log/nginx
+    links:
+      - php
+    container_name: claude_simweb_nginx
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+      - "traefik.http.routers.claude_simweb_nginx-secure.entrypoints=websecure"
+      - "traefik.http.routers.claude_simweb_nginx-secure.middlewares=user-auth@file"
+      - "traefik.http.routers.claude_simweb_nginx-secure.rule=Host(`simweb.${DOMAIN}`)"
+
+  db:
+    build:
+      context: .
+      dockerfile: mariadb/Dockerfile
+    container_name: claude_simweb_db
+    command: [mysqld, --character-set-server=utf8mb4, --collation-server=utf8mb4_unicode_ci, --innodb-file-format=Barracuda, --innodb-large-prefix=1, --innodb-file-per-table=1]
+    volumes:
+      - /var/www/web/simweb/mysqlData/data:/var/lib/mysql
+      - /var/www/web/simweb/mariadb/exchange:/data_exchange
+      - /var/www/web/simweb/mariadb/logs/mysql:/var/logs/mysql
+      - /var/www/web/simweb/mariadb/data/mariadb/conf:/etc/mysql/conf.d
+    environment:
+      - MYSQL_ROOT_PASSWORD=ROOT
+      - MYSQL_DATABASE=simweb
+      - MYSQL_PASSWORD=mariapwd
+    networks:
+      - proxy
+
+  php:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+    container_name: claude_simweb_php-fpm
+    volumes:
+      - /var/www/web/simweb:/var/www/html:cached
+      - /var/www/web/simweb/data/nginx:/var/www/data
+      - /var/www/web/simweb/logs/php-fpm:/var/log/php
+      - /var/www/web/simweb/logs/cron:/var/log/cron
+    depends_on:
+      - db
+    networks:
+      - proxy
+
+volumes:
+  pimcore-database:
+
+networks:
+  proxy:
+    external: true
