@@ -48,8 +48,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=ROOT
       - MYSQL_DATABASE=pimcore
-      - MYSQL_USER=simweb
-      - MYSQL_PASSWORD=mariapwd
+      - MYSQL_USER=pimcore
+      - MYSQL_PASSWORD=pimcore
     networks:
       - proxy
 
