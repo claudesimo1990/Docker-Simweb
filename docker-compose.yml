@@ -19,7 +19,7 @@ services:
         default_conf: ./nginx/config/default.conf
         nginx_conf: ./nginx/config/nginx_prod.conf
     volumes:
-      - /var/www/web/simweb:/var/www/html
+      - /var/www/web/simweb/www:/var/www/html
       - /var/www/web/simweb/data:/var/www/data
       - /var/www/web/simweb/logs/nginx:/var/log/nginx
     links:
@@ -58,7 +58,7 @@ services:
       dockerfile: php/Dockerfile
     container_name: claude_simweb_php-fpm
     volumes:
-      - /var/www/web/simweb:/var/www/html:cached
+      - /var/www/web/simweb/www:/var/www/html:cached
       - /var/www/web/simweb/data/nginx:/var/www/data
       - /var/www/web/simweb/logs/php-fpm:/var/log/php
       - /var/www/web/simweb/logs/cron:/var/log/cron
